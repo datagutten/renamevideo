@@ -1,0 +1,3 @@
+[submodule "tvdb"]
+	path = tvdb
+	url = git@github.com:datagutten/tvdb.git
