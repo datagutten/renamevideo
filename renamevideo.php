@@ -12,8 +12,8 @@ error_reporting('E_ALL');
 
 if(isset($argv[1]))
 	$_GET['folder']=$argv[1];
-require 'config.php';
-require_once 'tvguide.class.php';
+require 'xmltvtools/tvguide.class.php';
+require 'config_renamevideo.php';
 $guide=new tvguide;
 //$guide->debug=true;
 require 'tvdb/tvdb.php';
