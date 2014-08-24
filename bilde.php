@@ -1,4 +1,6 @@
 <?php
 header('Content-type: image/png');
-echo file_get_contents($_GET['file']);
+$fp=fopen($_GET['file'],'r');
+fpassthru($fp);
+fclose($fp);
 ?>
