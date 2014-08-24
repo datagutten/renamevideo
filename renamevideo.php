@@ -243,7 +243,7 @@ foreach ($dir as $key=>$file)
 	if (file_exists($eitfile=$path.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram)))
 		$displaytext="---".$guide->eitparser($eitfile)."---";
 	//Create screenshots
-	$snapshotpath=$path.'snapshots/'.str_replace(',','',$pathinfo['filename']);;
+	$snapshotpath=$path.'snapshots/'.str_replace(',','',$pathinfo['filename']);
 	if(file_exists($path.'/snapshots/') && !file_exists($snapshotpath))
 	{
 		if(!isset($mplayer_mode))
