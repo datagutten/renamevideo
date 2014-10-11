@@ -37,8 +37,7 @@ if (isset($_POST['button']))
 		$newname=$_POST['navn'][$i];
 		if ($newname!='')
 		{
-			$pathinfo=pathinfo($_POST['filnavn'][$i]);
-			$oldname=$_POST['filnavn'][$i];
+			$oldname=$_POST['basename'][$i];
 			$newname=str_replace(array(':','?','/'),array(' - ','',''),$newname);
 			
 			$oldfilename=$path.$oldname;
@@ -61,12 +60,12 @@ if (isset($_POST['button']))
 				if(is_object($xmlprogram))
 					$xmlprogram->asXML($newfilename.'.xml');
 			}
-			if(!file_exists($path.'/del')) //Lag slettemappe hvis den ikke eksisterer
-				mkdir($path.'/del');
-			if(file_exists($path.'/snapshots/'.$oldname)) //Sjekk om det er laget snapshots
-				rename("$path/snapshots/$oldname","$path/del/$oldname.del");
+			if(!file_exists($dir_delete)) //Create folder for removed files
+				mkdir($dir_delete);
+			if(file_exists($dir_snapshots=$dir_video.'/snapshots/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
+				rename($dir_snapshots,$dir_delete.'/'.$_POST['basename'][$i]);
 			else
-				echo "No snapshots found: {$path}/snapshots/{$oldname}<br>\n";
+				echo "No snapshots found: $dir_snapshots<br>\n";
 				
 			foreach ($extensions as $extension)
 			{
@@ -80,7 +79,7 @@ if (isset($_POST['button']))
 					{
 						echo 'Delete: '.$oldname.$extension.'<br>';
 						//var_dump($oldfile);
-						rename($oldfile,"$path/del/$oldname.del$extension");
+						rename($oldfile,$dir_delete."/$oldname.del$extension");
 					}
 					elseif(!file_exists($newfile) && file_exists($oldfile)) //Sjekk at filen finnes og at det nye navnet er ledig
 					{
@@ -115,7 +114,6 @@ $i=0;
 $count=0;
 foreach ($dir as $key=>$file)
 {
-
 	$pathinfo=pathinfo($file);
 	if(!isset($pathinfo['extension']) || $pathinfo['extension']!='ts' || !$info=$guide->parsefilename($file))
 		continue;
@@ -154,7 +152,6 @@ foreach ($dir as $key=>$file)
 			$displaytext.=$xmlprogram->desc."<br />\n";
 			$programinfo['xml']['description']=(string)$xmlprogram->desc;
 		}
-	
 		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->seasonepisode($xmlprogram))
 		{
 			$programinfo['xml']['seasonepisode']=$guide->seasonepisode($xmlprogram,false);
@@ -248,7 +245,7 @@ foreach ($dir as $key=>$file)
 			<td><?php echo $displaytext; ?></td>
 			<td>
 				<input name="navn[]" type="text" id="textfield" value="" size="6" />
-				<input name="filnavn[]" type="hidden" id="hiddenField" value="<?Php echo $pathinfo['filename']; ?>" />
+				<input name="basename[]" type="hidden" id="hiddenField" value="<?Php echo $pathinfo['filename']; ?>" />
                 <input name="nfo[]" type="hidden"  value="<?php echo isset($nfo) ? $nfo:''; ?>"/>
 			</td>
          <td>
