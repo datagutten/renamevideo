@@ -12,12 +12,18 @@ error_reporting('E_ALL');
 
 if(isset($argv[1]))
 	$_GET['folder']=$argv[1];
-require 'xmltvtools/tvguide.class.php';
+
 require 'config_renamevideo.php';
+$dir_video=$config['videopath'].$_GET['folder'];
+$dir_delete=$dir_video.'/delete';
+
+require 'xmltvtools/tvguide.class.php';
 $guide=new tvguide;
 //$guide->debug=true;
+
 require 'tvdb/tvdb.php';
 $tvdb=new tvdb($tvdb_key);
+
 if(file_exists('tvdb_mappings.php'))
 	require 'tvdb_mappings.php';
 
