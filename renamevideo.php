@@ -100,9 +100,6 @@ if (!file_exists($path))
 
 $dir=scandir($path);
 $dir=array_diff($dir,array('.','..','Thumbs.db'));
-//preg_match_all('^[0-9]{2}\-.*\.nfo^',implode("\n",$dir),$files);
-
-//preg_match_all('/(([0-9]{8}.*)\.ts)\n/',implode("\n",$dir),$files); //Finn filer som kommer rett fra dreambox
 
 sort($dir);
 $i=0; 
@@ -115,7 +112,7 @@ $count=0;
 foreach ($dir as $key=>$file)
 {
 	$pathinfo=pathinfo($file);
-	if(!isset($pathinfo['extension']) || $pathinfo['extension']!='ts' || !$info=$guide->parsefilename($file))
+	if(!isset($pathinfo['extension']) || $pathinfo['extension']!='ts' || !$info=$guide->parsefilename($file)) //Check if the file is a valid recording
 		continue;
 	if($count>=50)
 		break;
@@ -135,24 +132,24 @@ foreach ($dir as $key=>$file)
 	
 		if(isset($starttimestamp))
 			$displaytext.=date('H:i',$starttimestamp)."&nbsp;";
-		if(isset($xmlprogram->title))	
+		if(isset($xmlprogram->title)) //Get the title
 		{
 			$displaytext.=' '.$xmlprogram->title;
 			$programinfo['xml']['title']=(string)$xmlprogram->title;
 		}
-		if(isset($xmlprogram->category))
+		if(isset($xmlprogram->category)) //Get the category
 		{
 			if(!is_array($xmlprogram->category))
 				$displaytext.=' - '.$xmlprogram->category."<br />\n";
 			else
 				$displaytext.=' - '.$xmlprogram->category[1]."<br />\n";
 		}
-		if(isset($xmlprogram->desc))
+		if(isset($xmlprogram->desc)) //Get the description
 		{
 			$displaytext.=$xmlprogram->desc."<br />\n";
 			$programinfo['xml']['description']=(string)$xmlprogram->desc;
 		}
-		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->seasonepisode($xmlprogram))
+		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->seasonepisode($xmlprogram)) //Get the episode-num string and convert it to season and episode
 		{
 			$programinfo['xml']['seasonepisode']=$guide->seasonepisode($xmlprogram,false);
 			$displaytext.=$episodestring."<br />\n";
