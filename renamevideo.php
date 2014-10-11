@@ -112,10 +112,6 @@ $i=0;
 <form id="form1" name="form1" method="post" action="">
 <table border=1>
 <?Php
-if(!isset($mplayer_mode))
-	$screenshot="SET mplayer=\"D:\Program Files (x86)\SMPlayer\mplayer\"\r\n";
-else
-	$screenshot='';
 $count=0;
 foreach ($dir as $key=>$file)
 {
@@ -126,12 +122,7 @@ foreach ($dir as $key=>$file)
 	if($count>=50)
 		break;
 	$count++;
-	/*if(strpos($file,'.ap')!==false || strpos($file,'.cuts')!==false || strpos($file,'.eit')!==false)
-		continue;*/
-	
 
-	//$file=str_replace(' -  - ',' - Discovery - ',$file);
-	//$tvguide=tvguide($file.'.ts');
 	$displaytext='';
 
 	if(($xmlprogram=$guide->recordinginfo($file))!==false) //Get info from XML
@@ -143,10 +134,6 @@ foreach ($dir as $key=>$file)
 			var_dump($guide->error);
 		}
 		$starttimestamp=strtotime($xmlprogram->attributes()->start);
-
-		//$tvguide['episode-num'][1]."\n". //Episodenummer
-
-		//var_dump(isset($xmlprogram));
 	
 		if(isset($starttimestamp))
 			$displaytext.=date('H:i',$starttimestamp)."&nbsp;";
@@ -167,16 +154,12 @@ foreach ($dir as $key=>$file)
 			$displaytext.=$xmlprogram->desc."<br />\n";
 			$programinfo['xml']['description']=(string)$xmlprogram->desc;
 		}
-		/*if(isset($textep))
-			$displaytext.="\n<br>{$tvguide['episode-num'][1]}";*/
-	
 	
 		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->seasonepisode($xmlprogram))
 		{
 			$programinfo['xml']['seasonepisode']=$guide->seasonepisode($xmlprogram,false);
 			$displaytext.=$episodestring."<br />\n";
 		}
-
 	}
 	elseif(empty($guide->error))
 	{
@@ -227,7 +210,7 @@ foreach ($dir as $key=>$file)
 					break;		
 			}
 		}
-		
+
 		if(is_array($tvdb_series)) //Series is found, find episode
 		{
 			if($programinfo_final['seasonepisode']['season']==0)
@@ -243,7 +226,6 @@ foreach ($dir as $key=>$file)
 
 		if(!empty($tvdb->error))
 			$displaytext.='<br />'.$tvdb->error."<br />\n";
-		
 	}
 
 	if (file_exists($eitfile=$path.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram)))
@@ -260,7 +242,7 @@ foreach ($dir as $key=>$file)
 		$nfo.="\r\n".date('Y-m-d H:i',$starttimestamp);
 	$nfo.="\r\n".$file;
 
-	?>	
+	?>
 		<tr>
 			<td><?Php echo '<a href="file://'.$winpath.$file.'">'.str_replace('  ','&nbsp;&nbsp;',htmlentities($file)).'</a>'?></td>
 			<td><?php echo $displaytext; ?></td>
@@ -285,7 +267,7 @@ foreach ($dir as $key=>$file)
 		</tr>
 		<?Php
 
-	unset($tvguide,$textep,$calc_ep,$displaytext,$xmlguide,$xmlprogram,$nfo,$programinfo,$programinfo_final);
+	unset($displaytext,$xmlprogram,$nfo,$programinfo,$programinfo_final);
 }
 
 ?>
