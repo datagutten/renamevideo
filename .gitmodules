@@ -1,0 +1,9 @@
+[submodule "tvdb"]
+	path = tvdb
+	url = git@github.com:datagutten/tvdb.git
+[submodule "xmltvtools"]
+	path = xmltvtools
+	url = git@github.com:datagutten/xmltvtools.git
+[submodule "tools"]
+	path = tools
+	url = git@github.com:datagutten/tools.git
