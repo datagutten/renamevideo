@@ -242,15 +242,6 @@ foreach ($dir as $key=>$file)
 
 	if (file_exists($eitfile=$path.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram)))
 		$displaytext="---".$guide->eitparser($eitfile)."---";
-	//Create screenshots
-	$snapshotpath=$path.'snapshots/'.str_replace(',','',$pathinfo['filename']);
-	if(file_exists($path.'/snapshots/') && !file_exists($snapshotpath))
-	{
-		if(!isset($mplayer_mode))
-			$screenshot.='start cmd /c "%mplayer%\mplayer -benchmark -nosound -quiet -zoom -vf screenshot -vo png:z=9:outdir="'.$pathinfo['filename'].'" -sstep 30 "..\\'.$file.'""'."\r\n";
-		elseif($mplayer_mode=='linux')
-			$screenshot.='mplayer -benchmark -nosound -quiet -zoom -vf screenshot -vo png:z=9:outdir="'.$pathinfo['filename'].'" -sstep 30 "../'.$file.'"'."\n";
-	}
 
 	if(!empty($guide->error)) //Vis feilmeldinger i tabellen
 	{
@@ -274,30 +265,15 @@ foreach ($dir as $key=>$file)
 			</td>
          <td>
 		 <?Php
-		 //Vis screenshots
-		
-		 if ($show_screenshots && file_exists($snapshotpath))
-		 {
-			$pic=1;
-			$maxpic=$pic+19;
-			
-			$snapshots=scandir($snapshotpath); 
-			$lastpicture=array_pop($snapshots); //finn siste bilde
-			$lastnumber=(int)$lastpicture;
-			
-			for ($pic=$pic; $pic<=$lastnumber+5; $pic=$pic+5)
+		 //Show snapshots
+		if(file_exists($dir_snapshots=$path.'/snapshots/'.$file))
+		{
+			foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
 			{
-				if($pic>$lastnumber)
-					$pic=$lastnumber;
-				$snapshotfile=$snapshotpath.'/000000'.str_pad($pic,2,'0',STR_PAD_LEFT).'.png';
-				if (file_exists($snapshotfile))
-					echo '<img src="bilde.php?file='.$snapshotfile.'" width="15%" height="15%"/>'."\n";
-			if($pic==$lastnumber)
-				break;
+				$snapshotfile=$dir_snapshots.'/'.$snapshot;
+				echo '<img src="bilde.php?file='.$snapshotfile.'" width="15%" height="15%"/>'."\n";
 			}
-
-		 }
-
+		}
 		?>
         </td>
 		</tr>
@@ -310,14 +286,5 @@ foreach ($dir as $key=>$file)
 </table>
 <input type="submit" name="button" id="button" value="Submit" />
 </form>
-<?Php
-if (file_exists($path.'/snapshots'))
-{
-	if(!isset($mplayer_mode))
-		file_put_contents($path.'/snapshots/screenshot.cmd',$screenshot);
-	elseif($mplayer_mode=='linux')
-		file_put_contents($path.'/snapshots/screenshot.sh',$screenshot);
-}
-?>
 </body>
 </html>
