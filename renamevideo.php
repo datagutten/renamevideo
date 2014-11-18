@@ -230,12 +230,6 @@ foreach ($dir as $key=>$file)
 		$displaytext.="<br />\nError: ".$guide->error;
 		$guide->error='';	
 	}
-	//Lag fil med info
-	$nfo=trim(str_replace("<br />","\r\n",$displaytext));
-	if(isset($starttimestamp))
-		$nfo.="\r\n".date('Y-m-d H:i',$starttimestamp);
-	$nfo.="\r\n".$file;
-
 	?>
 		<tr>
 			<td><?Php echo '<a href="file://'.$winpath.$file.'">'.str_replace('  ','&nbsp;&nbsp;',htmlentities($file)).'</a>'?></td>
@@ -243,7 +237,6 @@ foreach ($dir as $key=>$file)
 			<td>
 				<input name="navn[]" type="text" id="textfield" value="" size="6" />
 				<input name="basename[]" type="hidden" id="hiddenField" value="<?Php echo $pathinfo['filename']; ?>" />
-                <input name="nfo[]" type="hidden"  value="<?php echo isset($nfo) ? $nfo:''; ?>"/>
 			</td>
          <td>
 		 <?Php
@@ -262,7 +255,7 @@ foreach ($dir as $key=>$file)
 		</tr>
 		<?Php
 
-	unset($displaytext,$xmlprogram,$nfo,$programinfo,$programinfo_final);
+	unset($displaytext,$xmlprogram,$programinfo,$programinfo_final);
 }
 
 ?>
