@@ -195,6 +195,7 @@ foreach ($dir as $key=>$file)
 			}
 			else //Not found by lookup, search for name on TVDB
 			{
+				$guide->error='';
 				$tvdb_series=$tvdb->findseries($search,$tvdb->lang);
 				if(is_array($tvdb_series))
 					break;
@@ -228,7 +229,7 @@ foreach ($dir as $key=>$file)
 	if(!empty($guide->error)) //Vis feilmeldinger i tabellen
 	{
 		$displaytext.="<br />\nError: ".$guide->error;
-		$guide->error='';	
+		$guide->error='';
 	}
 	?>
 		<tr>
