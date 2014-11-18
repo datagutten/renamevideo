@@ -253,7 +253,8 @@ foreach ($dir as $key=>$file)
 			foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
 			{
 				$snapshotfile=$dir_snapshots.'/'.$snapshot;
-				echo '<img src="bilde.php?file='.$snapshotfile.'" width="15%" height="15%"/>'."\n";
+				if(is_file($snapshotfile))
+					echo '<img src="bilde.php?file='.$snapshotfile.'" width="15%" height="15%"/>'."\n";
 			}
 		}
 		?>
