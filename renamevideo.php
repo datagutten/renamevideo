@@ -40,13 +40,13 @@ if (isset($_POST['button']))
 			$oldname=$_POST['basename'][$i];
 			$newname=str_replace(array(':','?','/'),array(' - ','',''),$newname);
 			
-			$oldfilename=$path.$oldname;
+			$oldfilename=$dir_video.'/'.$oldname;
 			if ($folder=='NRK' || strpos($folder,'input')!==false || strpos($folder,'diverse')!==false)
-				$newfilename=$path.'/'.$newname; //Ikke bruk navnet på samlemapper i filnavn
+				$newfilename=$dir_video.'/'.$newname; //Ikke bruk navnet på samlemapper i filnavn
 			elseif (strpos($oldname,'HD'))
-				$newfilename=$path.'/'.$folder.' '.$newname.' HD'; //Er det tatt opp fra en HD kanal, legg til HD i filnavn
+				$newfilename=$dir_video.'/'.$folder.' '.$newname.' HD'; //Er det tatt opp fra en HD kanal, legg til HD i filnavn
 			else
-				$newfilename=$path.'/'.$folder.' '.$newname; //Lag filnavn med seriens navn
+				$newfilename=$dir_video.'/'.$folder.' '.$newname; //Lag filnavn med seriens navn
 			
 			if(file_exists($newfilename.'.ts')) //Handle existing files
 			{
@@ -95,10 +95,10 @@ if (isset($_POST['button']))
 	}
 }
 
-if (!file_exists($path))
-	die("Folder not found: $path");
+if (!file_exists($dir_video))
+	die("Folder not found: $dir_video");
 
-$dir=scandir($path);
+$dir=scandir($dir_video);
 $dir=array_diff($dir,array('.','..','Thumbs.db'));
 
 sort($dir);
@@ -159,7 +159,7 @@ foreach ($dir as $key=>$file)
 	{
 		$displaytext.="tvguide returned false with no error<br />\n";
 	}
-	if(file_exists($eitfile=$path.$pathinfo['filename'].'.eit'))
+	if(file_exists($eitfile=$dir_video.'/'.$pathinfo['filename'].'.eit'))
 		$programinfo['eit']=$eitparser->parse($eitfile);
 	$info_sources=array('xml','eit');
 	$info_fields=array('title','seasonepisode','description');
@@ -223,7 +223,7 @@ foreach ($dir as $key=>$file)
 			$displaytext.='<br />'.$tvdb->error."<br />\n";
 	}
 
-	if (file_exists($eitfile=$path.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram)))
+	if (file_exists($eitfile=$dir_video.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram)))
 		$displaytext="---".$guide->eitparser($eitfile)."---";
 
 	if(!empty($guide->error)) //Vis feilmeldinger i tabellen
@@ -242,7 +242,7 @@ foreach ($dir as $key=>$file)
          <td>
 		 <?Php
 		 //Show snapshots
-		if(file_exists($dir_snapshots=$path.'/snapshots/'.$file))
+		if(file_exists($dir_snapshots=$dir_video.'/snapshots/'.$file))
 		{
 			foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
 			{
