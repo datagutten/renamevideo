@@ -215,7 +215,12 @@ foreach ($dir as $key=>$file)
 			if(isset($tvdbinfo['Episode']))
 			{
 				$tvdbinfo=$tvdbinfo['Episode'];
-				$displaytext.="TVDB: {$tvdb_series['Series']['SeriesName']}<br />\nS".str_pad($tvdbinfo['Combined_season'],2,'0',STR_PAD_LEFT).'E'.str_pad($tvdbinfo['EpisodeNumber'],2,'0',STR_PAD_LEFT).' - '.$tvdbinfo['EpisodeName']."<br />\n";
+				$displaytext.="TVDB: {$tvdb_series['Series']['SeriesName']}<br />\n".
+				'S'.str_pad($tvdbinfo['Combined_season'],2,'0',STR_PAD_LEFT).
+				'E'.str_pad($tvdbinfo['EpisodeNumber'],2,'0',STR_PAD_LEFT);
+				if(!empty($tvdbinfo['EpisodeName']))
+					$displaytext.=' - '.$tvdbinfo['EpisodeName'];
+				$displaytext.="<br />\n";
 			}
 		}
 
