@@ -16,6 +16,8 @@ if(isset($argv[1]))
 require 'config_renamevideo.php';
 $dir_video=$config['videopath'].$_GET['folder'];
 $dir_delete=$dir_video.'/delete';
+if(!isset($config['snapshotpath']))
+	$config['snapshotpath']=$dir_video.'/snapshots';
 
 require 'xmltvtools/tvguide.class.php';
 $guide=new tvguide;
@@ -62,8 +64,16 @@ if (isset($_POST['button']))
 			}
 			if(!file_exists($dir_delete)) //Create folder for removed files
 				mkdir($dir_delete);
-			if(file_exists($dir_snapshots=$dir_video.'/snapshots/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
-				rename($dir_snapshots,$dir_delete.'/'.$_POST['basename'][$i]);
+
+			if(!file_exists($config['snapshotpath'].'/delete'))
+				mkdir($config['snapshotpath'].'/delete');
+			if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$_POST['basename'][$i].'.ts'))
+			{
+				if($newname=='del') //Check if snapshot folder exists
+					rename($dir_snapshots,$config['snapshotpath'].'/delete/'.$_POST['basename'][$i]);
+				else
+					rename($dir_snapshots,dirname($dir_snapshots).'/'.$newname);
+			}
 			else
 				echo "No snapshots found: $dir_snapshots<br>\n";
 				
@@ -247,7 +257,7 @@ foreach ($dir as $key=>$file)
          <td>
 		 <?Php
 		 //Show snapshots
-		if(file_exists($dir_snapshots=$dir_video.'/snapshots/'.$file))
+		if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$file))
 		{
 			foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
 			{
