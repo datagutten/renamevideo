@@ -76,12 +76,15 @@ if (isset($_POST['button']))
 			if(!file_exists($dir_delete)) //Create folder for removed files
 				mkdir($dir_delete);
 
-			if(!file_exists($config['snapshotpath'].'/delete'))
-				mkdir($config['snapshotpath'].'/delete');
-			if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$_POST['basename'][$i].'.ts'))
+			
+			if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
 			{
-				if($newname=='del') //Check if snapshot folder exists
+				if($newname=='del')
+				{
+					if(!file_exists($config['snapshotpath'].'/delete'))
+						mkdir($config['snapshotpath'].'/delete');
 					rename($dir_snapshots,$config['snapshotpath'].'/delete/'.$_POST['basename'][$i]);
+				}
 				else
 					rename($dir_snapshots,dirname($dir_snapshots).'/'.$newname);
 			}
