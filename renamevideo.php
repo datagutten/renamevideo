@@ -14,6 +14,17 @@ if(isset($argv[1]))
 	$_GET['folder']=$argv[1];
 
 require 'config_renamevideo.php';
+if(empty($_GET['folder']))
+{
+	foreach(array_diff(scandir($config['videopath']),array('.','..')) as $folder)
+	{
+		if(!is_dir($config['videopath'].'/'.$folder))
+			continue;
+		echo "<a href=\"?folder=".htmlentities(urlencode($folder))."\">$folder</a><br />\n";
+	}
+	die();
+}
+
 $dir_video=$config['videopath'].$_GET['folder'];
 $dir_delete=$dir_video.'/delete';
 if(!isset($config['snapshotpath']))
