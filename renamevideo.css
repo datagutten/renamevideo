@@ -1,0 +1,11 @@
+@charset "utf-8";
+/* CSS Document */
+p {
+	margin-bottom:0px;
+}
+.error {
+	background-color: #F00;
+}
+.warning {
+	background-color: #FF0;
+}
