@@ -25,6 +25,10 @@ if(empty($_GET['folder']))
 	}
 	die();
 }
+if(isset($_GET['tvdb_lang']))
+	$tvdb_lang=$_GET['tvdb_lang'];
+else
+	$tvdb_lang=false;
 
 $dir_video=$config['videopath'].$_GET['folder'];
 $dir_delete=$dir_video.'/delete';
@@ -36,7 +40,7 @@ $guide=new tvguide;
 //$guide->debug=true;
 
 require 'tvdb/tvdb.php';
-$tvdb=new tvdb($tvdb_key);
+$tvdb=new tvdb();
 
 if(file_exists('tvdb_mappings.php'))
 	require 'tvdb_mappings.php';
@@ -230,38 +234,64 @@ foreach ($dir as $key=>$file)
 		$p_eit=$dom->createElement_simple('p',$td_description,array('class'=>'eit'),sprintf('EIT: %s',$programinfo['eit']['title']));
 	if(isset($programinfo['eit']['raw_seasonepisodestring']))
 		$dom->createElement_simple('span',$p_eit,array('class'=>'eit'),$programinfo['eit']['raw_seasonepisodestring']);
+	if(!empty($programinfo['eit']['seasonepisode']['season']) && $programinfo_final['seasonepisode']['season']==0) //Check if eit has more correct season than other sources
+		$programinfo_final['seasonepisode']['season']=$programinfo['eit']['seasonepisode']['season'];
 
 	if(is_object($tvdb) && isset($programinfo_final['title']) && isset($programinfo_final['seasonepisode'])) //If series title and episode num is known, find information on TVDB
 	{
 		$p_tvdb=$dom->createElement_simple('p',$td_description,array('class'=>'tvdb'),'TVDB: ');
 
-		$tvdb_searchstrings=array($programinfo_final['title'],preg_replace('/(.+):.+/','$1',$programinfo_final['title'])); //Search for complete title and title cut at :
+		$tvdb_searchstrings=array(preg_replace('/(.+):.+/','$1',$programinfo_final['title']),$programinfo_final['title']); //Search for complete title and title cut at :
 
 		foreach($tvdb_searchstrings as $search)
 		{
 			$tvdb->error='';
-
+			if(isset($tvdb_nomatch) && array_search($search,$tvdb_nomatch)!==false) //Do not retry searches that have failed previously
+				continue;
 			if(isset($tvdb_mappings) && ($tvdb_id=array_search($search,$tvdb_mappings))!==false) //Check if there is a mapping between series name and tvdb id
 			{
-				$tvdb_series=$tvdb->findseries($tvdb_id);
+				if(isset($tvdb_series_cache[$tvdb_id]))
+				{
+					//echo "Fetch mapped series from cache\n";
+					$tvdb_series=$tvdb_series_cache[$tvdb_id];
+				}
+				else //Series mapped but not in cache
+				{
+					//echo "Fetch mapped series\n";
+					$tvdb_series=$tvdb->get_series_and_episodes($tvdb_id); //Fetch series
+					$tvdb_series_cache[$tvdb_id]=$tvdb_series; //Add to cache
+				}
 				break;
 			}
 			else //Not found by lookup, search for name on TVDB
 			{
+				//echo "Search for series\n";
 				$guide->error='';
-				$tvdb_series=$tvdb->findseries($search,$tvdb->lang);
-				if(is_array($tvdb_series))
+				$tvdb_series_search=$tvdb->series_search($search);
+
+				if(is_array($tvdb_series_search))
+				{
+					if($tvdb_lang===false)
+						$lang=$tvdb->last_search_language;
+					else
+						$lang=$tvdb_lang;
+					$tvdb_series=$tvdb->get_series_and_episodes($tvdb_series_search['id'],$lang);
+					$tvdb_series_cache[$tvdb_series['Series']['id']]=$tvdb_series;
+					$tvdb_mappings[$tvdb_series['Series']['id']]=$search; //Add id to mappings to avoid search next time
 					break;
+				}
 			}
+			//If we are here the search has not matched
+			$tvdb_nomatch[]=$search;
 		}
 
 		if(is_array($tvdb_series)) //Series is found, find episode
 		{
-			if($programinfo_final['seasonepisode']['season']==0)
-				$programinfo_final['seasonepisode']['season']=1;
-			$tvdbinfo=$tvdb->finnepisode($tvdb_series,$programinfo_final['seasonepisode']['season'],$programinfo_final['seasonepisode']['episode']);
+			//print_r($tvdb_series['Series']);
+			$tvdbinfo=$tvdb->episode_info($tvdb_series['Episode'],$programinfo_final['seasonepisode']['season'],$programinfo_final['seasonepisode']['episode']);
+
 			if($tvdbinfo!==false)
-				$dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->link($tvdbinfo)),$tvdb_series['Series']['SeriesName']);			
+				$dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->link($tvdbinfo)),$tvdb_series['Series']['seriesName']);
 
 			$p_tvdb->appendChild($dom->createElement('br'));
 
