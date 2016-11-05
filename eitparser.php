@@ -6,6 +6,8 @@ class eitparser
 	public function parse($file)
 	{
 		$data=file_get_contents($file);
+		if(strlen($data)>1000)
+			return false;
 		$data=str_replace('(R)','',$data);
 		$titleref=strpos($data,chr(0x4D));
 		
