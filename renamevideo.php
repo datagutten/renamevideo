@@ -6,6 +6,7 @@
 <link href="renamevideo.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
+<script type="text/javascript" src="renamevideo.js"></script>
 <?Php
 ini_set('display_errors',1);
 error_reporting('E_ALL');
@@ -141,7 +142,6 @@ foreach ($dir as $key=>$file)
 		continue;
 	if($count>=50)
 		break;
-	$count++;
 
 	$table->appendChild($tr=$dom->createElement('tr')); //Row for recording
 	
@@ -197,7 +197,7 @@ foreach ($dir as $key=>$file)
 		{
 			$programinfo['xml']['seasonepisode']=$guide->seasonepisode($xmlprogram,false);
 			$td_description->appendChild($dom->createElement('br'));
-			$span_description=$dom->createElement_simple('span',$td_description,array('class'=>'seasonepisode'),$episodestring);
+			$span_description=$dom->createElement_simple('span',$td_description,array('class'=>'seasonepisode','id'=>'seasonepisode'.$key),$episodestring);
 		}
 		$recording_start=strtotime($info['datetime']);
 		$offset=$starttimestamp-$recording_start;
@@ -266,7 +266,7 @@ foreach ($dir as $key=>$file)
 			$p_tvdb->appendChild($dom->createElement('br'));
 
 			if(($episodename=$tvdb->episodename($tvdbinfo))!==false)
-				$p_tvdb->appendChild($dom->createElement('span',htmlentities($episodename)));
+				$dom->createElement_simple('span',$p_tvdb,array('id'=>'tvdb_episode'.$count,'class'=>'tvdb_episode'),$episodename);
 		}
 		if(!empty($tvdb->error)) //Show TVDB errors
 		{
@@ -280,7 +280,7 @@ foreach ($dir as $key=>$file)
 
 	$td_name=$dom->createElement('td');
 	$tr->appendChild($td_name);
-	$input_name=$dom->createElement_simple('input',$td_name,array('name'=>'name[]','type'=>'text','size'=>'6'));
+	$input_name=$dom->createElement_simple('input',$td_name,array('name'=>'name[]','type'=>'text','size'=>'6','id'=>'input'.$count));
 	$input_basename=$dom->createElement_simple('input',$td_name,array('name'=>'basename[]','type'=>'hidden','value'=>$pathinfo['filename']));
 	
 	//Show snapshots
@@ -301,10 +301,18 @@ foreach ($dir as $key=>$file)
 		$td_name->setAttribute('colspan',2);
 
 	unset($displaytext,$xmlprogram,$programinfo,$programinfo_final);
+	$count++;
 }
 
-$dom->createElement_simple('input',$form,array('type'=>'submit','name'=>'button','value'=>'Submit'));
-echo $dom->saveXML($form);
+$dom->createElement_simple('span',$form,array('style'=>'display: none;','id'=>'field_count'),(string)$count);
+if($count>0)
+{
+	$dom->createElement_simple('span',$form,array('onclick'=>'fill_episodes()'),'Fill episode names');
+	$dom->createElement_simple('input',$form,array('type'=>'submit','name'=>'button','value'=>'Submit'));
+	echo $dom->saveXML($form);
+}
+else
+	echo 'Nothing to be done';
 ?>
 </body>
 </html>
