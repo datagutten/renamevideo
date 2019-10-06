@@ -1,0 +1,17 @@
+{
+    "name": "datagutten/renamevideo",
+    "description": "A tool to rename dreambox recordings based on xmltv data",
+    "type": "project",
+    "require": {
+        "datagutten/xmltvtools": "dev-master",
+        "twig/twig": "^2.12",
+        "datagutten/video-tools": "dev-master"
+    },
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "datagutten",
+            "email": "datagutten@datagutten.net"
+        }
+    ]
+}

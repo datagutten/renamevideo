@@ -1,2 +1,5 @@
 cache
 config_renamevideo.php
+config.php
+
+/vendor/
