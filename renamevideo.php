@@ -8,8 +8,15 @@
 <body>
 <script type="text/javascript" src="renamevideo.js"></script>
 <?Php
+
+use datagutten\dreambox\recording_info;
+use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
+use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
+use datagutten\xmltv\tools\parse\parser;
+
 ini_set('display_errors',1);
-error_reporting('E_ALL');
+//error_reporting('E_ALL');
+require 'vendor/autoload.php';
 
 if(isset($argv[1]))
 	$_GET['folder']=$argv[1];
@@ -35,22 +42,25 @@ $dir_delete=$dir_video.'/delete';
 if(!isset($config['snapshotpath']))
 	$config['snapshotpath']=$dir_video.'/snapshots';
 
-require 'xmltvtools/tvguide.class.php';
-$guide=new tvguide;
+$guide = new parser();
 //$guide->debug=true;
 
-require 'tvdb/tvdb.php';
 $tvdb=new tvdb();
 
 if(file_exists('tvdb_mappings.php'))
 	require 'tvdb_mappings.php';
 
-require 'eitparser.php';
-$eitparser=new eitparser;
+try {
+    $dreambox = new recording_info();
+}
+catch (Exception $e)
+{
+    die($e->getMessage());
+}
 
-require 'tools/DOMDocument_createElement_simple.php';
 $dom=new DOMDocumentCustom;
 $dom->formatOutput = true;
+$video=new video;
 
 if(isset($_POST['button']))
 {
@@ -78,7 +88,7 @@ if(isset($_POST['button']))
 
 			if ($newname!='del' && !file_exists($newfilename.'.xml')) //Do not write info file for files to be deleted
 			{
-				$xmlprogram=$guide->recordinginfo($oldname.'.ts'); //Write xmltv data to file
+				$xmlprogram=$dreambox->recording_info($oldname.'.ts'); //Write xmltv data to file
 				if(is_object($xmlprogram))
 					$xmlprogram->asXML($newfilename.'.xml');
 			}
@@ -142,7 +152,16 @@ $count=0;
 foreach ($dir as $key=>$file)
 {
 	$pathinfo=pathinfo($file);
-	if(!isset($pathinfo['extension']) || $pathinfo['extension']!='ts' || !$info=$guide->parsefilename($file)) //Check if the file is a valid recording
+	try {
+        $info = recording_info::parse_file_name($file);
+    }
+    catch (InvalidArgumentException $e)
+    {
+        //echo "Invalid file name: $file<br />\n";
+        continue;
+    }
+
+	if(!isset($pathinfo['extension']) || $pathinfo['extension']!='ts' || empty($info)) //Check if the file is a valid recording
 		continue;
 	if($count>=50)
 		break;
@@ -153,14 +172,10 @@ foreach ($dir as $key=>$file)
 	$td_description=$dom->createElement_simple('td',$tr,array('class'=>'description'));
 	$displaytext='';
 
-	if(($xmlprogram=$guide->recordinginfo($file))!==false) //Get info from XML
+    //Get info from XML
+	try
 	{
-		if(!is_object($xmlprogram))
-		{
-			var_dump($file);
-			var_dump($xmlprogram);
-			var_dump($guide->error);
-		}
+        $xmlprogram=$dreambox->recording_info($file);
 		$starttimestamp=strtotime($xmlprogram->attributes()->start);
 
 		if(isset($starttimestamp))
@@ -197,9 +212,9 @@ foreach ($dir as $key=>$file)
 			
 			$programinfo['xml']['description']=(string)$xmlprogram->desc;
 		}
-		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->seasonepisode($xmlprogram)) //Get the episode-num string and convert it to season and episode
+		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->season_episode($xmlprogram)) //Get the episode-num string and convert it to season and episode
 		{
-			$programinfo['xml']['seasonepisode']=$guide->seasonepisode($xmlprogram,false);
+			$programinfo['xml']['seasonepisode']=$guide->season_episode($xmlprogram,false);
 			$td_description->appendChild($dom->createElement('br'));
 			$span_description=$dom->createElement_simple('span',$td_description,array('class'=>'seasonepisode','id'=>'seasonepisode'.$key),$episodestring);
 		}
@@ -210,12 +225,24 @@ foreach ($dir as $key=>$file)
 		elseif($offset<60*5 || $offset>60*10)
 			$td_description->setAttribute('class','category warning');
 	}
-	else
-		$dom->createElement_simple('p',$td_description,array('class'=>'error'),'Error from xmltvguide: '.$guide->error);
+	catch (ProgramNotFoundException|ChannelNotFoundException $e) {
+        $dom->createElement_simple('p', $td_description, array('class' => 'error'), 'Error from xmltv: ' . $e->getMessage());
+    }
 
 
-	if(file_exists($eitfile=$dir_video.'/'.$pathinfo['filename'].'.eit')) //Parse eit file if found
-		$programinfo['eit']=$eitparser->parse($eitfile);
+    //Parse eit file if found
+	try {
+        //$programinfo['eit']=$eitparser->parse($eitfile);
+        $programinfo['eit'] = recording_info::parse_eit($dir_video . '/' . $pathinfo['filename'] . '.eit', 'array');
+        $programinfo['eit']['seasonepisode'] = $programinfo['eit']['season_episode'];
+        if(empty($programinfo['eit']['description']) && !empty($programinfo['eit']['short_description']))
+            $programinfo['eit']['description'] = $programinfo['eit']['short_description'];
+        var_dump($programinfo['eit']);
+    }
+    catch (FileNotFoundException $e)
+    {
+        echo $e->getMessage()."\n";
+    }
 	$info_sources=array('xml','eit');
 	$info_fields=array('title','seasonepisode','description');
 	foreach($info_fields as $field) //Decide which information source to use
@@ -232,10 +259,10 @@ foreach ($dir as $key=>$file)
 
 	if(isset($programinfo['eit']['title']))
 		$p_eit=$dom->createElement_simple('p',$td_description,array('class'=>'eit'),sprintf('EIT: %s',$programinfo['eit']['title']));
-	if(isset($programinfo['eit']['raw_seasonepisodestring']))
-		$dom->createElement_simple('span',$p_eit,array('class'=>'eit'),$programinfo['eit']['raw_seasonepisodestring']);
-	if(!empty($programinfo['eit']['seasonepisode']['season']) && $programinfo_final['seasonepisode']['season']==0) //Check if eit has more correct season than other sources
-		$programinfo_final['seasonepisode']['season']=$programinfo['eit']['seasonepisode']['season'];
+	if(isset($programinfo['eit']['raw_season_episode_string']))
+		$dom->createElement_simple('span',$p_eit,array('class'=>'eit'),$programinfo['eit']['raw_season_episode_string']);
+	if(!empty($programinfo['eit']['season_episode']) && $programinfo_final['seasonepisode']['season']==0) //Check if eit has more correct season than other sources
+		$programinfo_final['seasonepisode']['season']=$programinfo['eit']['season_episode']['season'];
 
 	if(is_object($tvdb) && isset($programinfo_final['title']) && isset($programinfo_final['seasonepisode'])) //If series title and episode num is known, find information on TVDB
 	{
@@ -266,8 +293,13 @@ foreach ($dir as $key=>$file)
 			else //Not found by lookup, search for name on TVDB
 			{
 				//echo "Search for series\n";
-				$guide->error='';
-				$tvdb_series_search=$tvdb->series_search($search);
+				try {
+                    $tvdb_series_search = $tvdb->series_search($search);
+                }
+                catch (Exception $e)
+                {
+                    $tvdb_series_search = null;
+                }
 
 				if(is_array($tvdb_series_search))
 				{
@@ -285,13 +317,11 @@ foreach ($dir as $key=>$file)
 			$tvdb_nomatch[]=$search;
 		}
 
-		if(is_array($tvdb_series)) //Series is found, find episode
+        $key = sprintf('S%02dE%02d', $programinfo_final['seasonepisode']['season'], $programinfo_final['seasonepisode']['episode']);
+		if(isset($tvdb_series) && is_array($tvdb_series) && isset($tvdb_series['Episode'][$key])) //Series is found, find episode
 		{
-			//print_r($tvdb_series['Series']);
-			$tvdbinfo=$tvdb->episode_info($tvdb_series['Episode'],$programinfo_final['seasonepisode']['season'],$programinfo_final['seasonepisode']['episode']);
-
-			if($tvdbinfo!==false)
-				$dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->link($tvdbinfo)),$tvdb_series['Series']['seriesName']);
+            $tvdbinfo = $tvdb_series['Episode'][$key];
+            $dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->series_link($tvdbinfo)),$tvdb_series['Series']['seriesName']);
 
 			$p_tvdb->appendChild($dom->createElement('br'));
 
