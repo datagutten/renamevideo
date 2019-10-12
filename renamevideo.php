@@ -70,8 +70,7 @@ if(isset($_POST['button']))
 		if ($newname!='')
 		{
 			$oldname=$_POST['basename'][$i];
-			$newname=str_replace(array(':','?','/'),array(' - ','',''),$newname);
-			
+			$newname=str_replace(array(': ','?','/'),array(' -',' - ','',''),$newname);
 			$oldfilename=$dir_video.'/'.$oldname;
 			if(isset($config['no_name_folders']) && array_search($folder,$config['no_name_folders'])!==false)
 				$newfilename=$dir_video.'/'.$newname; //Do not add folder name to files in folders specified in config
