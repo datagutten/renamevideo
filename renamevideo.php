@@ -165,10 +165,23 @@ foreach ($dir as $key=>$file)
 		continue;
 	if($count>=50)
 		break;
+	$recording_start=strtotime($info['datetime']);
 
 	$table->appendChild($tr=$dom->createElement('tr')); //Row for recording
 	
 	$td_file=$dom->createElement_simple('td',$tr,array('class'=>'filename'),$file);
+
+	try {
+    	$duration=$video->duration($dir_video.'/'.$file);
+
+		$recording_end=$recording_start+$duration;
+		$dom->createElement_simple('p',$td_file,false,sprintf('%s-%s',date('H:i',$recording_start),date('H:i',$recording_end)));
+	}
+	catch (Exception|DependencyFailedException $e)
+    {
+        $dom->createElement_simple('p',$td_file,false,$e->getMessage());
+    }
+
 	$td_description=$dom->createElement_simple('td',$tr,array('class'=>'description'));
 	$displaytext='';
 
@@ -218,7 +231,7 @@ foreach ($dir as $key=>$file)
 			$td_description->appendChild($dom->createElement('br'));
 			$span_description=$dom->createElement_simple('span',$td_description,array('class'=>'seasonepisode','id'=>'seasonepisode'.$key),$episodestring);
 		}
-		$recording_start=strtotime($info['datetime']);
+
 		$offset=$starttimestamp-$recording_start;
 		if($offset<0)
 			$td_description->setAttribute('class','category error');
