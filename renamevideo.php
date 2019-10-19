@@ -45,10 +45,7 @@ if(!isset($config['snapshotpath']))
 $guide = new parser();
 //$guide->debug=true;
 
-$tvdb=new tvdb();
-
-if(file_exists('tvdb_mappings.php'))
-	require 'tvdb_mappings.php';
+$tvdb=new tvdb_utils();
 
 try {
     $dreambox = new recording_info();
