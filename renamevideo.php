@@ -252,65 +252,25 @@ foreach ($dir as $key=>$file)
 	{
 		$p_tvdb=$dom->createElement_simple('p',$td_description,array('class'=>'tvdb'),'TVDB: ');
 
-		$tvdb_searchstrings=array(preg_replace('/(.+):.+/','$1',$programinfo_final['title']),$programinfo_final['title']); //Search for complete title and title cut at :
+		if(isset($_GET['tvdb_title']))
+			$tvdb_searchstrings=array($_GET['tvdb_title']);
+		else
+            $tvdb_searchstrings=tvdb_utils::generate_search_strings($programinfo_final['title']);
 
-		foreach($tvdb_searchstrings as $search)
-		{
-			$tvdb->error='';
-			if(isset($tvdb_nomatch) && array_search($search,$tvdb_nomatch)!==false) //Do not retry searches that have failed previously
-				continue;
-			if(isset($tvdb_mappings) && ($tvdb_id=array_search($search,$tvdb_mappings))!==false) //Check if there is a mapping between series name and tvdb id
-			{
-				if(isset($tvdb_series_cache[$tvdb_id]))
-				{
-					//echo "Fetch mapped series from cache\n";
-					$tvdb_series=$tvdb_series_cache[$tvdb_id];
-				}
-				else //Series mapped but not in cache
-				{
-					//echo "Fetch mapped series\n";
-					$tvdb_series=$tvdb->get_series_and_episodes($tvdb_id); //Fetch series
-					$tvdb_series_cache[$tvdb_id]=$tvdb_series; //Add to cache
-				}
-				break;
-			}
-			else //Not found by lookup, search for name on TVDB
-			{
-				//echo "Search for series\n";
-				try {
-                    $tvdb_series_search = $tvdb->series_search($search);
-                }
-                catch (Exception $e)
-                {
-                    $tvdb_series_search = null;
-                }
-
-				if(is_array($tvdb_series_search))
-				{
-					if($tvdb_lang===false)
-						$lang=$tvdb->last_search_language;
-					else
-						$lang=$tvdb_lang;
-					$tvdb_series=$tvdb->get_series_and_episodes($tvdb_series_search['id'],$lang);
-					$tvdb_series_cache[$tvdb_series['Series']['id']]=$tvdb_series;
-					$tvdb_mappings[$tvdb_series['Series']['id']]=$search; //Add id to mappings to avoid search next time
-					break;
-				}
-			}
-			//If we are here the search has not matched
-			$tvdb_nomatch[]=$search;
-		}
+        $tvdb_series = $tvdb->series_search_helper($tvdb_searchstrings, $tvdb_lang);
 
         $key = sprintf('S%02dE%02d', $programinfo_final['seasonepisode']['season'], $programinfo_final['seasonepisode']['episode']);
-		if(isset($tvdb_series) && is_array($tvdb_series) && isset($tvdb_series['Episode'][$key])) //Series is found, find episode
+		if(!empty($tvdb_series) && isset($tvdb_series['Episode'][$key])) //Series is found, find episode
 		{
             $tvdbinfo = $tvdb_series['Episode'][$key];
-            $dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->series_link($tvdbinfo)),$tvdb_series['Series']['seriesName']);
+            if(!empty($tvdb_series['Series']['seriesName']))
+                $dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->series_link($tvdbinfo['id'])),$tvdb_series['Series']['seriesName']);
 
 			$p_tvdb->appendChild($dom->createElement('br'));
 
-			if(($episodename=$tvdb->episodename($tvdbinfo))!==false)
-				$dom->createElement_simple('span',$p_tvdb,array('id'=>'tvdb_episode'.$count,'class'=>'tvdb_episode'),$episodename);
+			$episode_name=$tvdb->episodename($tvdbinfo);
+			if(!empty($episode_name) && empty($programinfo_final['seasonepisode']))
+				$dom->createElement_simple('span',$p_tvdb,array('id'=>'tvdb_episode'.$count,'class'=>'tvdb_episode'),$episode_name);
 		}
 		if(!empty($tvdb->error)) //Show TVDB errors
 		{
