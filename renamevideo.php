@@ -188,48 +188,27 @@ foreach ($dir as $key=>$file)
 	try
 	{
         $xmlprogram=$dreambox->recording_info($file);
+        $generator = (string)$xmlprogram->xpath('/tv/@generator-info-name')[0];
 		$starttimestamp=strtotime($xmlprogram->attributes()->start);
 
 		if(isset($starttimestamp))
-			$dom->createElement_simple('span',$td_description,array('class'=>'starttime'),date('H:i',$starttimestamp)); //Add a span with the start time to the td
+            $programinfo['xml']['start'] = date('H:i',$starttimestamp);
 		if(isset($xmlprogram->title)) //Get the title
-		{
-			$dom->createElement_simple('span',$td_description,array('class'=>'title'),(string)$xmlprogram->title);
 			$programinfo['xml']['title']=(string)$xmlprogram->title;
-		}
+
 		if(isset($xmlprogram->category)) //Get the category
 		{
 			if(!is_array($xmlprogram->category))
-				$category=' - '.$xmlprogram->category;
+                $programinfo['xml']['category']=$xmlprogram->category;
 			else
-			{
-				$category=' - '.$xmlprogram->category[1];
-				$category.=print_r($xmlprogram->category,true);
-			}
-			
-			$span_category=$dom->createElement('span',$category);
-			$span_category->setAttribute('class','category');
-			$td_description->appendChild($span_category);
+                $programinfo['xml']['category'] = implode(', ', $xmlprogram->{'category'});
 		}
 		if(isset($xmlprogram->{'sub-title'})) //Get the sub-title
-		{
-			$dom->createElement_simple('p',$td_description,array('class'=>'title'),(string)$xmlprogram->{'sub-title'});
 			$programinfo['xml']['sub-title']=(string)$xmlprogram->{'sub-title'};
-		}
 		if(isset($xmlprogram->desc)) //Get the description
-		{
-			$td_description->appendChild($dom->createElement('br'));
-			$span_description=$dom->createElement('span',(string)$xmlprogram->desc);
-			$td_description->appendChild($span_description);
-			
 			$programinfo['xml']['description']=(string)$xmlprogram->desc;
-		}
 		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->season_episode($xmlprogram)) //Get the episode-num string and convert it to season and episode
-		{
 			$programinfo['xml']['seasonepisode']=$guide->season_episode($xmlprogram,false);
-			$td_description->appendChild($dom->createElement('br'));
-			$span_description=$dom->createElement_simple('span',$td_description,array('class'=>'seasonepisode','id'=>'seasonepisode'.$key),$episodestring);
-		}
 
 		$offset=$starttimestamp-$recording_start;
 		if($offset<0)
@@ -249,14 +228,14 @@ foreach ($dir as $key=>$file)
         $programinfo['eit']['seasonepisode'] = $programinfo['eit']['season_episode'];
         if(empty($programinfo['eit']['description']) && !empty($programinfo['eit']['short_description']))
             $programinfo['eit']['description'] = $programinfo['eit']['short_description'];
-        var_dump($programinfo['eit']);
     }
     catch (FileNotFoundException $e)
     {
         echo $e->getMessage()."\n";
     }
 	$info_sources=array('xml','eit');
-	$info_fields=array('title','seasonepisode','description');
+	$info_fields=array('title','seasonepisode','description', 'start', 'category', 'sub-title');
+    $programinfo_final = [];
 	foreach($info_fields as $field) //Decide which information source to use
 	{
 		foreach($info_sources as $source)
@@ -269,10 +248,6 @@ foreach ($dir as $key=>$file)
 		}
 	}
 
-	if(isset($programinfo['eit']['title']))
-		$p_eit=$dom->createElement_simple('p',$td_description,array('class'=>'eit'),sprintf('EIT: %s',$programinfo['eit']['title']));
-	if(isset($programinfo['eit']['raw_season_episode_string']))
-		$dom->createElement_simple('span',$p_eit,array('class'=>'eit'),$programinfo['eit']['raw_season_episode_string']);
 	if(!empty($programinfo['eit']['season_episode']) && $programinfo_final['seasonepisode']['season']==0) //Check if eit has more correct season than other sources
 		$programinfo_final['seasonepisode']['season']=$programinfo['eit']['season_episode']['season'];
 
@@ -347,8 +322,20 @@ foreach ($dir as $key=>$file)
 		}
 	}
 
-	if(file_exists($eitfile=$dir_video.$pathinfo['filename'].'.eit') && (!isset($xmlprogram) || !is_object($xmlprogram))) //If the program is missing xml data, try to get info from eit
-		$dom->createElement_simple('span',$td_description,array('class'=>'eit'),"---".$guide->eitparser($eitfile)."---");
+    if(!empty($programinfo_final['start']))
+        $dom->createElement_simple('span', $td_description, array('class'=>'final_start', 'id'=>'final_start'.$count), $programinfo_final['start'].' ');
+	if(!empty($programinfo_final['title']))
+	    $dom->createElement_simple('span', $td_description, array('class'=>'final_title', 'id'=>'final_title'.$count), $programinfo_final['title']);
+	if(!empty($programinfo['xml']) && !empty($programinfo['eit']) && $programinfo['eit']['title']!=$programinfo['xml']['title'])
+        $dom->createElement_simple('p', $td_description, array('class'=>'warning', 'id'=>'mismatch_title'.$count), sprintf('Title mismatch: XML: %s EIT: %s', $programinfo['xml']['title'], $programinfo['eit']['title']));
+    if(!empty($programinfo_final['description']))
+        $p_desc=$dom->createElement_simple('p',$td_description,array('class'=>'final_description', 'id'=>'final_description'.$count), $programinfo_final['description']);
+    if(!empty($programinfo_final['seasonepisode']))
+        $dom->createElement_simple('p', $td_description, array('class'=>'final_season_episode', 'id'=>'final_season_episode'.$count), sprintf('S%02dE%02d', $programinfo_final['seasonepisode']['season'], $programinfo_final['seasonepisode']['episode']));
+    if(!empty($programinfo_final['sub-title']))
+        $dom->createElement_simple('p', $td_description, array('class'=>'final_sub-title', 'id'=>'final_sub-title'.$count), $programinfo_final['sub-title']);
+    if(isset($generator))
+        $dom->createElement_simple('p', $td_description, null, $generator);
 
 	$td_name=$dom->createElement('td');
 	$tr->appendChild($td_name);
@@ -372,7 +359,7 @@ foreach ($dir as $key=>$file)
 	else
 		$td_name->setAttribute('colspan',2);
 
-	unset($displaytext,$xmlprogram,$programinfo,$programinfo_final);
+	unset($displaytext,$xmlprogram,$programinfo,$programinfo_final, $generator);
 	$count++;
 }
 
