@@ -13,6 +13,8 @@ use datagutten\dreambox\recording_info;
 use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
 use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
 use datagutten\xmltv\tools\parse\parser;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 ini_set('display_errors',1);
 //error_reporting('E_ALL');
@@ -58,6 +60,7 @@ catch (Exception $e)
 $dom=new DOMDocumentCustom;
 $dom->formatOutput = true;
 $video=new video;
+$filesystem = new Filesystem();
 
 if(isset($_POST['button']))
 {
@@ -95,12 +98,25 @@ if(isset($_POST['button']))
 			{
 				if($newname=='del')
 				{
-					if(!file_exists($config['snapshotpath'].'/delete')) //Create folder for removed snapshots
-						mkdir($config['snapshotpath'].'/delete');
-					rename($dir_snapshots,$config['snapshotpath'].'/delete/'.$_POST['basename'][$i]);
-				}
-				else
-					rename($dir_snapshots,dirname($dir_snapshots).'/'.$newname);
+				    try {
+                        $filesystem->remove($dir_snapshots);
+                    }
+                    catch (IOException $e)
+                    {
+                        printf("Failed to delete snapshot dir %s: %s", $dir_snapshots, $e->getMessage());
+                    }
+                }
+				else {
+                    try {
+                        $filesystem->rename($dir_snapshots, dirname($dir_snapshots) . '/' . $newname);
+                    }
+                    catch (IOException $e)
+                    {
+                        $filesystem->mkdir(dirname($dir_snapshots) . '/' . $newname);
+                        $filesystem->mirror($dir_snapshots, dirname($dir_snapshots) . '/' . $newname);
+                        $filesystem->remove($dir_snapshots);
+                    }
+                }
 			}
 			else
 				echo "No snapshots found: $dir_snapshots<br>\n";
