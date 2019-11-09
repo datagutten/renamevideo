@@ -23,12 +23,13 @@ require 'vendor/autoload.php';
 if(isset($argv[1]))
 	$_GET['folder']=$argv[1];
 
+$config = require 'config.php';
 require 'config_renamevideo.php';
 if(empty($_GET['folder']))
 {
-	foreach(array_diff(scandir($config['videopath']),array('.','..')) as $folder)
+	foreach(array_diff(scandir($config['video_path']),array('.','..')) as $folder)
 	{
-		if(!is_dir($config['videopath'].'/'.$folder))
+		if(!is_dir($config['video_path'].'/'.$folder))
 			continue;
 		echo "<a href=\"?folder=".htmlentities(urlencode($folder))."\">$folder</a><br />\n";
 	}
@@ -39,10 +40,10 @@ if(isset($_GET['tvdb_lang']))
 else
 	$tvdb_lang=false;
 
-$dir_video=$config['videopath'].$_GET['folder'];
+$dir_video=$config['video_path'].'/'.$_GET['folder'];
 $dir_delete=$dir_video.'/delete';
-if(!isset($config['snapshotpath']))
-	$config['snapshotpath']=$dir_video.'/snapshots';
+if(!isset($config['snapshot_path']))
+	$config['snapshot_path']=$dir_video.'/snapshots';
 
 $guide = new parser();
 //$guide->debug=true;
@@ -94,7 +95,7 @@ if(isset($_POST['button']))
 			if(!file_exists($dir_delete)) //Create folder for removed files
 				mkdir($dir_delete);
 			
-			if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
+			if(file_exists($dir_snapshots=$config['snapshot_path'].'/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
 			{
 				if($newname=='del')
 				{
@@ -316,7 +317,7 @@ foreach ($dir as $key=>$file)
 	$input_basename=$dom->createElement_simple('input',$td_name,array('name'=>'basename[]','type'=>'hidden','value'=>$pathinfo['filename']));
 	
 	//Show snapshots
-	if(file_exists($dir_snapshots=$config['snapshotpath'].'/'.$file))
+	if(file_exists($dir_snapshots=$config['snapshot_path'].'/'.$file))
 	{
 		$td_snapshots=$dom->createElement_simple('td',$tr,array('class'=>'snapshots'));
 		foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
