@@ -12,6 +12,7 @@
 use datagutten\dreambox\recording_info;
 use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
 use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
+use datagutten\xmltv\tools\exceptions;
 use datagutten\xmltv\tools\parse\parser;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -88,9 +89,14 @@ if(isset($_POST['button']))
 
 			if ($newname!='del' && !file_exists($newfilename.'.xml')) //Do not write info file for files to be deleted
 			{
-				$xmlprogram=$dreambox->recording_info($oldname.'.ts'); //Write xmltv data to file
-				if(is_object($xmlprogram))
-					$xmlprogram->asXML($newfilename.'.xml');
+			    try {
+                    $xmlprogram = $dreambox->recording_info($oldname . '.ts'); //Write xmltv data to file
+                    $xmlprogram->asXML($newfilename . '.xml');
+                }
+                catch (exceptions\ProgramNotFoundException|exceptions\InvalidFileNameException|exceptions\ChannelNotFoundException $e)
+                {
+                    echo $e->getMessage()."<br />\n";
+                }
 			}
 			if(!file_exists($dir_delete)) //Create folder for removed files
 				mkdir($dir_delete);
