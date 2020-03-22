@@ -14,5 +14,10 @@
             "name": "datagutten",
             "email": "datagutten@datagutten.net"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "datagutten\\renamevideo\\": "src"
+        }
+    }
 }

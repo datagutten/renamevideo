@@ -8,7 +8,7 @@
 <body>
 <script type="text/javascript" src="renamevideo.js"></script>
 <?Php
-
+use datagutten\renamevideo;
 use datagutten\dreambox\recording_info;
 use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
 use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
@@ -63,6 +63,7 @@ $dom=new DOMDocumentCustom;
 $dom->formatOutput = true;
 $video=new video;
 $filesystem = new Filesystem();
+$recording_info = new renamevideo\recording_info();
 
 if(isset($_POST['button']))
 {
@@ -168,6 +169,7 @@ $form=$dom->createElement_simple('form',false,array('method'=>'post'));
 $table=$dom->createElement_simple('table',$form,array('border'=>'1'));
 
 $count=0;
+$programinfo = [];
 foreach ($dir as $key=>$file)
 {
 	$pathinfo=pathinfo($file);
@@ -204,31 +206,11 @@ foreach ($dir as $key=>$file)
 	$td_description=$dom->createElement_simple('td',$tr,array('class'=>'description'));
 	$displaytext='';
 
+    $programinfo = [];
     //Get info from XML
 	try
 	{
-        $xmlprogram=$dreambox->recording_info($file);
-        $generator = (string)$xmlprogram->xpath('/tv/@generator-info-name')[0];
-		$starttimestamp=strtotime($xmlprogram->attributes()->start);
-
-		if(isset($starttimestamp))
-            $programinfo['xml']['start'] = date('H:i',$starttimestamp);
-		if(isset($xmlprogram->title)) //Get the title
-			$programinfo['xml']['title']=(string)$xmlprogram->title;
-
-		if(isset($xmlprogram->category)) //Get the category
-		{
-			if(!is_array($xmlprogram->category))
-                $programinfo['xml']['category']=$xmlprogram->category;
-			else
-                $programinfo['xml']['category'] = implode(', ', $xmlprogram->{'category'});
-		}
-		if(isset($xmlprogram->{'sub-title'})) //Get the sub-title
-			$programinfo['xml']['sub-title']=(string)$xmlprogram->{'sub-title'};
-		if(isset($xmlprogram->desc)) //Get the description
-			$programinfo['xml']['description']=(string)$xmlprogram->desc;
-		if(isset($xmlprogram->{'episode-num'}) && $episodestring=$guide->season_episode($xmlprogram)) //Get the episode-num string and convert it to season and episode
-			$programinfo['xml']['seasonepisode']=$guide->season_episode($xmlprogram,false);
+        list($programinfo['xml'], $starttimestamp, $generator) = $recording_info->file_info_xml($file);
 
 		$offset=$starttimestamp-$recording_start;
 		if($offset<0)
@@ -243,30 +225,15 @@ foreach ($dir as $key=>$file)
 
     //Parse eit file if found
 	try {
-        //$programinfo['eit']=$eitparser->parse($eitfile);
-        $programinfo['eit'] = recording_info::parse_eit($dir_video . '/' . $pathinfo['filename'] . '.eit', 'array');
-        $programinfo['eit']['seasonepisode'] = $programinfo['eit']['season_episode'];
-        if(empty($programinfo['eit']['description']) && !empty($programinfo['eit']['short_description']))
-            $programinfo['eit']['description'] = $programinfo['eit']['short_description'];
+        $programinfo['eit'] = $recording_info->eit_info($dir_video . '/' . $pathinfo['filename'] . '.eit');
     }
     catch (FileNotFoundException $e)
     {
         echo $e->getMessage()."\n";
     }
 	$info_sources=array('xml','eit');
-	$info_fields=array('title','seasonepisode','description', 'start', 'category', 'sub-title');
-    $programinfo_final = [];
-	foreach($info_fields as $field) //Decide which information source to use
-	{
-		foreach($info_sources as $source)
-		{
-			if(isset($programinfo[$source][$field]))
-			{
-				$programinfo_final[$field]=$programinfo[$source][$field];
-				continue 2;
-			}
-		}
-	}
+	$info_fields=array('title','seasonepisode','description', 'start', 'end', 'category', 'sub-title');
+    $programinfo_final = $recording_info->combine_info($programinfo);
 
 	if(!empty($programinfo['eit']['season_episode']) && $programinfo_final['seasonepisode']['season']==0) //Check if eit has more correct season than other sources
 		$programinfo_final['seasonepisode']['season']=$programinfo['eit']['season_episode']['season'];
