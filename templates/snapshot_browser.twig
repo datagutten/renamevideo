@@ -1,0 +1,19 @@
+{% extends 'base.twig' %}
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{{ root }}/static/snapshots.css"/>
+{% endblock %}
+{% block content %}
+    <table>
+        {% for file in files %}
+            <tr>
+                <td>{{ file.file }}</td>
+                {% if file.snapshots %}
+                    <td>{% include 'snapshots.twig' with {'snapshots': file.snapshots} %}</td>
+                {% else %}
+                    <td>&nbsp;</td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
