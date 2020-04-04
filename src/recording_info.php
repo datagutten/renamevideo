@@ -5,6 +5,7 @@ namespace datagutten\renamevideo;
 
 
 use datagutten\dreambox\recording_info as dreambox_info;
+use datagutten\tools;
 use datagutten\xmltv\tools\exceptions;
 use datagutten\xmltv\tools\parse\parser;
 use FileNotFoundException;
@@ -162,4 +163,18 @@ class recording_info
 
         return $program_info;
     }
+
+	/**
+	 * @param string $file Recording file
+	 * @throws FileNotFoundException
+	 * @return array Snapshot files
+	 */
+	function snapshots($file)
+	{
+		$pathinfo = pathinfo($file);
+		$dir_snapshots = sprintf('%s/snapshots/%s', $pathinfo['dirname'], $pathinfo['basename']);
+		if(!file_exists($dir_snapshots))
+			throw new FileNotFoundException($dir_snapshots);
+		return tools\files\files::get_files($dir_snapshots, ['png'], false);
+	}
 }

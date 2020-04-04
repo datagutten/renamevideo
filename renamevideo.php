@@ -288,23 +288,23 @@ foreach ($dir as $key=>$file)
 	$tr->appendChild($td_name);
 	$input_name=$dom->createElement_simple('input',$td_name,array('name'=>'name[]','type'=>'text','size'=>'6','id'=>'input'.$count));
 	$input_basename=$dom->createElement_simple('input',$td_name,array('name'=>'basename[]','type'=>'hidden','value'=>$pathinfo['filename']));
-	
-	//Show snapshots
-	if(file_exists($dir_snapshots=$config['snapshot_path'].'/'.$file))
-	{
+    //Show snapshots
+	try {
+        $snapshots = $recording_info->snapshots($dir_video.'/'.$file);
 		$td_snapshots=$dom->createElement_simple('td',$tr,array('class'=>'snapshots'));
-		foreach(array_diff(scandir($dir_snapshots),array('.','..','Thumbs.db')) as $snapshot)
+		foreach($snapshots as $snapshot)
 		{
-			$snapshotfile=$dir_snapshots.'/'.$snapshot;
-			if(is_file($snapshotfile))
-			{
-				$a_snapshot=$dom->createElement_simple('a',$td_snapshots,array('href'=>'bilde.php?file='.$snapshotfile));
-				$dom->createElement_simple('img',$a_snapshot,array('src'=>'bilde.php?file='.$snapshotfile,'height'=>'150px'));
-			}
+				$a_snapshot=$dom->createElement_simple('a',$td_snapshots,array('href'=>'image.php?file='.$snapshot));
+				$dom->createElement_simple('img',$a_snapshot,array('src'=>'image.php?file='.$snapshot,'height'=>'150px'));
 		}
 	}
-	else
-		$td_name->setAttribute('colspan',2);
+    catch (FileNotFoundException $e) {
+        $td_name->setAttribute('colspan', 2);
+    }
+    catch (Exception $e)
+    {
+        $td_snapshots=$dom->createElement_simple('td',$tr,array('class'=>'snapshots'), $e->getMessage());
+    }
 
 	unset($displaytext,$xmlprogram,$programinfo,$programinfo_final, $generator);
 	$count++;
