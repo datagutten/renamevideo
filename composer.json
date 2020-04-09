@@ -4,10 +4,10 @@
     "type": "project",
     "require": {
         "datagutten/tools": "^1.5",
-        "datagutten/xmltvtools": "dev-master",
-        "twig/twig": "^2.12",
+        "datagutten/tvdb": "dev-master",
         "datagutten/video-tools": "dev-master",
-        "datagutten/tvdb": "dev-master"
+        "datagutten/xmltvtools": "dev-master",
+        "twig/twig": "^2.12"
     },
     "license": "GPL-3.0-or-later",
     "authors": [
@@ -20,5 +20,8 @@
         "psr-4": {
             "datagutten\\renamevideo\\": "src"
         }
+    },
+    "config": {
+        "sort-packages": true
     }
 }
