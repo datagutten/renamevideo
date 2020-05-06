@@ -67,9 +67,9 @@ $recording_info = new renamevideo\recording_info();
 
 if(isset($_POST['button']))
 {
-	for ($i=0; $i<count($_POST['name']); $i++)
+	for ($i=0; $i<count($_POST['epname']); $i++)
 	{
-		$newname=$_POST['name'][$i];
+		$newname=$_POST['epname'][$i];
 		if ($newname!='')
 		{
 			$oldname=$_POST['basename'][$i];
@@ -286,7 +286,7 @@ foreach ($dir as $key=>$file)
 
 	$td_name=$dom->createElement('td');
 	$tr->appendChild($td_name);
-	$input_name=$dom->createElement_simple('input',$td_name,array('name'=>'name[]','type'=>'text','size'=>'6','id'=>'input'.$count));
+	$input_name=$dom->createElement_simple('input',$td_name,array('name'=>'epname[]','type'=>'text','size'=>'6','id'=>'input'.$count));
 	$input_basename=$dom->createElement_simple('input',$td_name,array('name'=>'basename[]','type'=>'hidden','value'=>$pathinfo['filename']));
     //Show snapshots
 	try {
