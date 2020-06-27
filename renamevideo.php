@@ -129,7 +129,7 @@ if(isset($_POST['button']))
 			else
 				echo "No snapshots found: $dir_snapshots<br>\n";
 				
-			foreach ($extensions as $extension)
+			foreach ($config['extensions'] as $extension)
 			{
 				//Add extension to the file name
 				$oldfile=$oldfilename.$extension;
