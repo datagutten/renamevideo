@@ -100,7 +100,7 @@ if(isset($_POST['button']))
                 }
 			}
 			if(!file_exists($dir_delete)) //Create folder for removed files
-				mkdir($dir_delete);
+				$filesystem->mkdir($dir_delete);
 			
 			if(file_exists($dir_snapshots=$config['snapshot_path'].'/'.$_POST['basename'][$i].'.ts')) //Check if snapshot folder exists
 			{
@@ -109,7 +109,7 @@ if(isset($_POST['button']))
 				    try {
                         $filesystem->remove($dir_snapshots);
                     }
-                    catch (IOException $e)
+                    catch (IOException|UnexpectedValueException $e)
                     {
                         printf("Failed to delete snapshot dir %s: %s", $dir_snapshots, $e->getMessage());
                     }
