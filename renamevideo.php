@@ -10,6 +10,7 @@
 <script type="text/javascript" src="renamevideo.js"></script>
 <?Php
 use datagutten\renamevideo;
+use datagutten\tvdb;
 use datagutten\dreambox\recording_info;
 use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
 use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
@@ -50,7 +51,14 @@ if(!isset($config['snapshot_path']))
 $guide = new parser();
 //$guide->debug=true;
 
-$tvdb=new tvdb_utils();
+try {
+	$tvdb = new tvdb_utils($config['tvdb']);
+}
+catch (tvdb\exceptions\tvdbException $e)
+{
+    echo $e->getMessage();
+    $tvdb = null;
+}
 
 try {
     $dreambox = new recording_info();
@@ -248,25 +256,27 @@ foreach ($dir as $key=>$file)
 		else
             $tvdb_searchstrings=tvdb_utils::generate_search_strings($programinfo_final['title']);
 
-        $tvdb_series = $tvdb->series_search_helper($tvdb_searchstrings, $tvdb_lang);
+		try {
+			$tvdb_series = $tvdb->series_search_helper($tvdb_searchstrings, $tvdb_lang);
+			$episode = $tvdb->episode_info($tvdb_series['id'], $programinfo_final['seasonepisode']['season'], $programinfo_final['seasonepisode']['episode']);
+		}
+		catch (tvdb\exceptions\api_error|tvdb\exceptions\noResultException $e)
+        {
+			$p_tvdb_error=$dom->createElement_simple('span',$p_tvdb,array('class'=>'error'), $e->getMessage());
+        }
 
-        $key = sprintf('S%02dE%02d', $programinfo_final['seasonepisode']['season'], $programinfo_final['seasonepisode']['episode']);
-		if(!empty($tvdb_series) && isset($tvdb_series['Episode'][$key])) //Series is found, find episode
+		if(!empty($episode)) //Series is found, find episode
 		{
-            $tvdbinfo = $tvdb_series['Episode'][$key];
-            if(!empty($tvdb_series['Series']['seriesName']))
-                $dom->createElement_simple('a',$p_tvdb,array('href'=>$tvdb->series_link($tvdbinfo['id'])),$tvdb_series['Series']['seriesName']);
+            if(!empty($tvdb_series['seriesName'])) {
+                $url = tvdb\tvdb::episode_link($episode);
+                $text = $tvdb_series['seriesName'].' '.tvdb\tvdb::episode_name($episode);
+				$dom->createElement_simple('a', $p_tvdb, array('href' => $url), $text);
+			}
 
 			$p_tvdb->appendChild($dom->createElement('br'));
 
-			$episode_name=$tvdb->episodename($tvdbinfo);
-			if(!empty($episode_name) && empty($programinfo_final['seasonepisode']))
-				$dom->createElement_simple('span',$p_tvdb,array('id'=>'tvdb_episode'.$count,'class'=>'tvdb_episode'),$episode_name);
-		}
-		if(!empty($tvdb->error)) //Show TVDB errors
-		{
-			$p_tvdb_error=$dom->createElement_simple('span',$p_tvdb,array('class'=>'error'),'TVDB error: '.$tvdb->error);
-			unset($tvdb->error);
+			if(!empty($episode['episodeName']) && empty($programinfo_final['seasonepisode']))
+				$dom->createElement_simple('span',$p_tvdb,array('id'=>'tvdb_episode'.$count,'class'=>'tvdb_episode'),$episode['episodeName']);
 		}
 	}
 
