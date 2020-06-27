@@ -2,6 +2,9 @@
 //https://trac.ffmpeg.org/wiki/Create%20a%20thumbnail%20image%20every%20X%20seconds%20of%20the%20video
 //http://www.nrg-media.de/2010/11/creating-screenshots-with-ffmpeg-is-slow/
 
+use datagutten\video_tools\video;
+use datagutten\video_tools\exceptions as video_exceptions;
+
 require 'vendor/autoload.php';
 $config = require 'config.php';
 
@@ -39,7 +42,7 @@ foreach($files as $file)
     try {
         $steps=video::snapshotsteps($dir_video.'/'.$file, 4, true, true);
     }
-    catch (DependencyFailedException $e)
+    catch (DependencyFailedException|video_exceptions\DurationNotFoundException $e)
     {
         echo $e->getMessage();
         break;
