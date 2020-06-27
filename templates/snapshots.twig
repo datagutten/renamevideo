@@ -1,5 +1,5 @@
 <div class="snapshots">
     {% for snapshot in snapshots %}
-        <a href="{{ root }}/image.php?file={{ snapshot }}"><img src="{{ root }}/image.php?file={{ snapshot }}" alt="{{ snapshot }}"></a>
+        <a href="{{ root }}/image.php?file={{ snapshot|url_encode }}"><img src="{{ root }}/image.php?file={{ snapshot|url_encode }}" alt="{{ snapshot }}" /></a>
     {% endfor %}
 </div>
