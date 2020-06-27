@@ -6,7 +6,7 @@
         "datagutten/tools": "^1.5",
         "datagutten/tvdb": "^3.2",
         "datagutten/video-tools": "^2.1",
-        "datagutten/xmltvtools": "dev-master",
+        "datagutten/xmltvtools": "^2.3",
         "twig/twig": "^2.12",
         "symfony/filesystem": "^4.3",
         "php-ffmpeg/php-ffmpeg": "^0.14.0",

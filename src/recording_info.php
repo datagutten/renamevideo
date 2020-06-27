@@ -7,7 +7,9 @@ namespace datagutten\renamevideo;
 use datagutten\dreambox\recording_info as dreambox_info;
 use datagutten\tools;
 use datagutten\xmltv\tools\exceptions;
-use datagutten\xmltv\tools\parse\parser;
+use datagutten\xmltv\tools\exceptions\XMLTVException;
+use datagutten\xmltv\tools\parse\merger;
+use DependencyFailedException;
 use FileNotFoundException;
 use SimpleXMLElement;
 
@@ -18,7 +20,7 @@ class recording_info
      */
     public $dreambox;
     /**
-     * @var parser 
+     * @var merger
      */
     public $xmltv_parser;
 
