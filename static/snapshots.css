@@ -1,0 +1,11 @@
+img.snapshots {
+    max-height: 150px;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+img {
+    max-height: 150px;
+}

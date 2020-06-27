@@ -4,6 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Rename video</title>
 <link href="renamevideo.css" rel="stylesheet" type="text/css" />
+    <link href="static/snapshots.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
 <script type="text/javascript" src="renamevideo.js"></script>
@@ -291,12 +292,13 @@ foreach ($dir as $key=>$file)
     //Show snapshots
 	try {
         $snapshots = $recording_info->snapshots($dir_video.'/'.$file);
-		$td_snapshots=$dom->createElement_simple('td',$tr,array('class'=>'snapshots'));
-		foreach($snapshots as $snapshot)
-		{
-				$a_snapshot=$dom->createElement_simple('a',$td_snapshots,array('href'=>'image.php?file='.$snapshot));
-				$dom->createElement_simple('img',$a_snapshot,array('src'=>'image.php?file='.$snapshot,'height'=>'150px'));
-		}
+        if(!empty($snapshots)) {
+            $snapshots_html = $utils->render('snapshots.twig', ['snapshots' => $snapshots]);
+            $fragment = $dom->createDocumentFragment();
+            $fragment->appendXML($snapshots_html);
+            $td_snapshots = $dom->createElement_simple('td', $tr, array('class' => 'snapshots'));
+            $td_snapshots->appendChild($fragment);
+        }
 	}
     catch (FileNotFoundException $e) {
         $td_name->setAttribute('colspan', 2);
