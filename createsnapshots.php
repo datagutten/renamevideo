@@ -17,7 +17,7 @@ elseif(is_dir($argv[1]))
 }
 else //Argument is a sub folder to video path
 {
-	$dir_video=$config['video_path'].$argv[1];
+	$dir_video=$config['video_path'].'/'.$argv[1];
 	if(!file_exists($dir_video))
 		die("$dir_video does not exist\n");
 }
@@ -29,14 +29,6 @@ $dir_snapshots=$dir_video.'/snapshots';
 foreach($files as $file)
 {
 	$pathinfo=pathinfo($file);
-	try {
-        $info = datagutten\dreambox\recording_info::parse_file_name($file);
-    }
-    catch (InvalidArgumentException $e)
-    {
-        echo $e->getMessage()." $file\n";
-        continue;
-    }
     if(file_exists($dir_snapshots.'/'.$file))
         continue;
 
