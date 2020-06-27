@@ -7,7 +7,11 @@
         "datagutten/tvdb": "dev-master",
         "datagutten/video-tools": "^2.1",
         "datagutten/xmltvtools": "dev-master",
-        "twig/twig": "^2.12"
+        "twig/twig": "^2.12",
+        "symfony/filesystem": "^4.3",
+        "php-ffmpeg/php-ffmpeg": "^0.14.0",
+        "ext-simplexml": "*",
+        "ext-dom": "*"
     },
     "license": "GPL-3.0-or-later",
     "authors": [
