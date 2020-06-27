@@ -12,9 +12,10 @@
 use datagutten\renamevideo;
 use datagutten\tvdb;
 use datagutten\dreambox\recording_info;
-use datagutten\xmltv\tools\exceptions\ChannelNotFoundException;
-use datagutten\xmltv\tools\exceptions\ProgramNotFoundException;
+use datagutten\video_tools\video;
+use datagutten\video_tools\exceptions as video_exceptions;
 use datagutten\xmltv\tools\exceptions;
+use datagutten\xmltv\tools\exceptions as xmltv_exceptions;
 use datagutten\xmltv\tools\parse\parser;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -62,6 +63,7 @@ catch (tvdb\exceptions\tvdbException $e)
 
 try {
     $dreambox = new recording_info();
+    $recording_info = new renamevideo\recording_info($config['xmltv_path'], $config['xmltv_sub_folders']);
 }
 catch (Exception $e)
 {
@@ -72,7 +74,7 @@ $dom=new DOMDocumentCustom;
 $dom->formatOutput = true;
 $video=new video;
 $filesystem = new Filesystem();
-$recording_info = new renamevideo\recording_info();
+$utils = new renamevideo\utils();
 
 if(isset($_POST['button']))
 {
@@ -206,8 +208,9 @@ foreach ($dir as $key=>$file)
 
 		$recording_end=$recording_start+$duration;
 		$dom->createElement_simple('p',$td_file,false,sprintf('%s-%s',date('H:i',$recording_start),date('H:i',$recording_end)));
+		$dom->createElement_simple('p',$td_file,false,video::seconds_to_time($duration));
 	}
-	catch (Exception|DependencyFailedException $e)
+	catch (video_exceptions\VideoException|DependencyFailedException $e)
     {
         $dom->createElement_simple('p',$td_file,false,$e->getMessage());
     }
@@ -280,8 +283,12 @@ foreach ($dir as $key=>$file)
 		}
 	}
 
-    if(!empty($programinfo_final['start']))
-        $dom->createElement_simple('span', $td_description, array('class'=>'final_start', 'id'=>'final_start'.$count), $programinfo_final['start'].' ');
+    if(!empty($programinfo_final['start'])) {
+        if (!empty($programinfo_final['end']))
+            $dom->createElement_simple('span', $td_description, array('class' => 'final_start', 'id' => 'final_end' . $count), sprintf('%s-%s ', $programinfo_final['start'], $programinfo_final['end']));
+        else
+            $dom->createElement_simple('span', $td_description, array('class' => 'final_start', 'id' => 'final_start' . $count), $programinfo_final['start'] . ' ');
+    }
 	if(!empty($programinfo_final['title']))
 	    $dom->createElement_simple('span', $td_description, array('class'=>'final_title', 'id'=>'final_title'.$count), $programinfo_final['title']);
 	if(!empty($programinfo['xml']) && !empty($programinfo['eit']) && $programinfo['eit']['title']!=$programinfo['xml']['title'])
@@ -294,6 +301,26 @@ foreach ($dir as $key=>$file)
         $dom->createElement_simple('p', $td_description, array('class'=>'final_sub-title', 'id'=>'final_sub-title'.$count), $programinfo_final['sub-title']);
     if(isset($generator))
         $dom->createElement_simple('p', $td_description, null, $generator);
+
+    if(isset($programinfo_final['end_timestamp']) && isset($programinfo_final['start_timestamp']))
+        $program_duration = $programinfo_final['end_timestamp'] - $programinfo_final['start_timestamp'];
+    else
+        $program_duration = 0;
+    if($duration>$program_duration+15) //Multiple episodes
+    {
+        try {
+			$multi_info = $recording_info->multi_info($file, $duration);
+			$td_description->textContent = '';
+			foreach (explode("\n", $multi_info) as $line) {
+				$td_description->appendChild(new DOMText($line));
+				$dom->createElement_simple('br', $td_description);
+			}
+		}
+		catch (xmltv_exceptions\XMLTVException $e)
+        {
+            $dom->createElement_simple('span', $td_description, ['class'=>'error'], $e->getMessage());
+        }
+    }
 
 	$td_name=$dom->createElement('td');
 	$tr->appendChild($td_name);

@@ -6,11 +6,14 @@ namespace datagutten\renamevideo;
 
 use datagutten\dreambox\recording_info as dreambox_info;
 use datagutten\tools;
+use datagutten\video_tools\video;
+use datagutten\video_tools\exceptions as video_exceptions;
 use datagutten\xmltv\tools\exceptions;
 use datagutten\xmltv\tools\exceptions\XMLTVException;
 use datagutten\xmltv\tools\parse\merger;
 use DependencyFailedException;
 use FileNotFoundException;
+use InvalidArgumentException;
 use SimpleXMLElement;
 
 class recording_info
@@ -30,11 +33,18 @@ class recording_info
     public $info_sources = array('xml', 'eit');
     
     public $info_fields=array('title','seasonepisode','description', 'start', 'start_timestamp', 'end', 'end_timestamp', 'category', 'sub-title');
-    
-    public function __construct()
+
+    /**
+     * recording_info constructor.
+     * @param string $xmltv_path XMLTV root path
+     * @param array $xmltv_sub_folders XMLTV sub folders to merge
+     * @throws FileNotFoundException XMLTV path not found
+     * @throws XMLTVException Invalid configuration file
+     */
+    public function __construct($xmltv_path, $xmltv_sub_folders)
     {
         $this->dreambox = new dreambox_info();
-        $this->xmltv_parser = new parser();
+        $this->xmltv_parser = new merger($xmltv_path, $xmltv_sub_folders);
     }
 
 	/**
@@ -164,6 +174,51 @@ class recording_info
         $program_info['recording_start'] = strtotime($recording['datetime']);
 
         return $program_info;
+    }
+
+    /**
+     * Get information about multiple programs in the same file
+     * @param string $file
+     * @param int $duration Recording duration in seconds (Fetched from file if not provided)
+     * @param string $return Choose to return string or array
+     * @return string|array
+     * @throws XMLTVException
+     */
+    function multi_info($file, $duration=null, $return = 'string')
+    {
+        if(empty($duration)) {
+            try {
+                $duration = video::duration($file);
+            }
+            catch (DependencyFailedException|video_exceptions\DurationNotFoundException $e)
+            {
+                throw new InvalidArgumentException('Duration not found and not provided', 0, $file);
+            }
+        }
+
+        $file_info = $this->dreambox->parse_file_name($file);
+        $start_timestamp = strtotime($file_info['datetime']);
+        $channel = $this->dreambox->channels->name_to_id($file_info['channel']);
+        $info_array = [];
+        $program = ['end_timestamp' => $start_timestamp];
+        $info = '';
+        while($program['end_timestamp']<$start_timestamp+$duration) {
+            $program = $this->xmltv_parser->find_program($program['end_timestamp'], $channel);
+            list($program) = $this->xml_info($program);
+            if(isset($program['seasonepisode']))
+                $episode = sprintf('S%02dE%02d', $program['seasonepisode']['season'], $program['seasonepisode']['episode']);
+            else
+                $episode = '';
+            if(!isset($program['sub-title']))
+                $program['sub-title'] = '';
+
+            $info .= sprintf("%s-%s %s %s\n%s\n%s\n\n", $program['start'], $program['end'], $program['title'], $episode, $program['sub-title'], $program['description']);
+            $info_array[] = $program;
+        }
+        if($return==='string')
+            return $info;
+        else
+            return $info_array;
     }
 
 	/**
