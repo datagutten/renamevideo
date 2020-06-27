@@ -187,9 +187,8 @@ foreach ($dir as $key=>$file)
 	try {
         $info = recording_info::parse_file_name($file);
     }
-    catch (InvalidArgumentException $e)
+    catch (xmltv_exceptions\InvalidFileNameException $e)
     {
-        //echo "Invalid file name: $file<br />\n";
         continue;
     }
 
@@ -230,7 +229,7 @@ foreach ($dir as $key=>$file)
 		elseif($offset<60*5 || $offset>60*10)
 			$td_description->setAttribute('class','category warning');
 	}
-	catch (ProgramNotFoundException|ChannelNotFoundException $e) {
+	catch (xmltv_exceptions\XMLTVException $e) {
         $dom->createElement_simple('p', $td_description, array('class' => 'error'), 'Error from xmltv: ' . $e->getMessage());
     }
 
@@ -241,7 +240,7 @@ foreach ($dir as $key=>$file)
     }
     catch (FileNotFoundException $e)
     {
-        echo $e->getMessage()."\n";
+        $dom->createElement_simple('p', $td_description, array('class' => 'error'), 'Error from eit parser: ' . $e->getMessage());
     }
 	$info_sources=array('xml','eit');
 	$info_fields=array('title','seasonepisode','description', 'start', 'end', 'category', 'sub-title');
