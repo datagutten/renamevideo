@@ -1,53 +1,63 @@
 <?Php
-require 'xmltvtools/tvguide.class.php';
-$tvguide=new tvguide;
-require 'config_renamevideo.php';
-$dir=glob(substr($config['videopath'],0,-1).'/'.$argv[1].'/*.ts*');
-require 'tools/filnavn.php';
 
-foreach($dir as $file)
-{
-	$file_info=$tvguide->parsefilename($file);
-	$recording_start=strtotime($file_info['datetime']);
-	if(($xmlprogram=$tvguide->recordinginfo($file))!==false) //Get info from XML
-	{
-		$attributes=$xmlprogram->attributes();
+use datagutten\renamevideo\Recording;
+use datagutten\tools\files\files;
+use datagutten\xmltv\tools\exceptions;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
-		$program_start=strtotime($attributes['start']);
-		$offset=$program_start-$recording_start;
-		echo $offset."\n";
-		//var_dump($offset!=0 && ($offset<60*5 || $offset>60*10));
-		if($offset!=0 && ($offset<60*5 || $offset>60*10))
-			continue;
-		else
-		{
-			//print_r($xmlprogram);
-			//print_r($file_info);
-			$title=(string)$xmlprogram->title;
-			$pathinfo=pathinfo($file);
-			//print_r($pathinfo);
+require 'vendor/autoload.php';
+$config = require 'config.php';
+$files = files::get_files(files::path_join($config['video_path'], $argv[1]), ['ts'], false);
+$filesystem = new Filesystem();
 
-			$outdir=$pathinfo['dirname'].'/'.filnavn($title);
-			if(!file_exists($outdir))
-				mkdir($outdir);
-			foreach($config['extensions'] as $extension)
-			{
-				if(file_exists($file=$pathinfo['dirname'].'/'.$pathinfo['filename'].$extension))
-				{
-					echo "mv '$file' '$outdir'\n";
-					if(!file_exists($outfile=$outdir.'/'.basename($file)))
-						//echo "rename($file,$outfile)\n";
-						rename($file,$outfile);
-					else
-						echo "File exists $outfile\n";
-				}
-				else
-					echo $file."\n";
-			}
-			//break;
-		}
-	}
-	/*else
-		echo "No xml info\n";*/
+foreach ($files as $file) {
+    try {
+        $recording = new Recording($file);
+    } catch (exceptions\InvalidFileNameException $e) {
+        continue;
+    } catch (FileNotFoundException | exceptions\XMLTVException $e) {
+        echo $e->getMessage() . "\n";
+        continue;
+    }
 
+    echo $file."\n";
+
+    try {
+        $program = $recording->nearestProgram();
+        $offset = $program->start_timestamp - $recording->start_timestamp;
+    } catch (exceptions\XMLTVException $e) {
+        echo $e->getMessage()."\n";
+        continue;
+    }
+
+    echo $offset."\n";
+
+    if (($argv[1] != 'sort_zero' && $offset < 0) && $offset != 0 && ($offset < 60 * 5 || $offset > 60 * 10)) {
+        continue;
+    } else {
+        $file = str_replace('.ts', '', $file);
+        $pathinfo=pathinfo($file);
+
+        $file_title = filnavn((string)$program->{'title'});
+
+        $outdir = files::path_join($recording->pathinfo['dirname'], $file_title);
+        if (!file_exists($outdir))
+            mkdir($outdir);
+        foreach ($config['extensions'] as $extension) {
+            $file = files::path_join($recording->pathinfo['dirname'], $recording->pathinfo['filename'].$extension);
+            if (file_exists($file)) {
+                echo "mv '$file' '$outdir'\n";
+                $outfile=$outdir.'/'.basename($file);
+                try {
+                    $filesystem->rename($file, $outfile);
+                    chmod($outfile, 0777);
+                } catch (IOException $e) {
+                    echo $e->getMessage() . "\n";
+                }
+            } else {
+                echo $file . "\n";
+            }
+        }
+    }
 }
