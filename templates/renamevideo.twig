@@ -1,0 +1,40 @@
+{% extends 'base.twig' %}
+{% block head %}
+    <link href="{{ root }}/renamevideo.css" rel="stylesheet" type="text/css" />
+    <link href="{{ root }}/static/snapshots.css" rel="stylesheet" type="text/css" />
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+{% endblock %}
+{% block content %}
+    <pre>{{ log }}</pre>
+    <form method="post">
+    <table>
+    {% for key, recording in recordings %}
+        <tr>
+            <td class="file_name">{{ recording.basename }}
+                <p>{{ recording.time }}</p>
+                <p id="duration{{ key }}">{{ recording.durationHMS }}</p>
+            </td>
+            <td class="description">
+                <h3>XMLTV</h3>
+                {% for program in recording.programs %}
+                    {% include 'program_obj.twig' %}
+                {% endfor %}
+
+                {% if recording.eit %}
+                    <h3>EIT</h3>
+                    {% include 'program_obj.twig' with {'program': recording.eit} %}
+                {% endif %}
+            </td>
+            <td>
+                <input type="text" name="epname[{{ recording.basename }}]" size="6" id="input{{ recording.basename }}" />
+            </td>
+            <td>
+                {% include 'snapshot_folders.twig' with {'folders': recording.snapshots} %}
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+        <input type="hidden" name="folder" value="{{ folder }}">
+        <input type="submit" value="Submit"/>
+    </form>
+{% endblock %}

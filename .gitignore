@@ -3,3 +3,7 @@ config_renamevideo.php
 config*.php
 
 /vendor/
+coverage_html
+clover.xml
+/.phpunit.result.cache
+/.idea/

@@ -3,7 +3,12 @@
 
 namespace datagutten\renamevideo;
 
-
+use datagutten\tools\files\files;
+use datagutten\xmltv\tools\common;
+use datagutten\xmltv\tools\exceptions\InvalidFileNameException;
+use datagutten\xmltv\tools\exceptions\XMLTVException;
+use datagutten\xmltv\tools\parse\parser;
+use FileNotFoundException;
 use Twig;
 
 class utils
@@ -13,11 +18,32 @@ class utils
      */
     public $twig;
     public $root = '/renamevideo';
+    /**
+     * @var common\files
+     */
+    public $files;
+    /**
+     * @var common\channel_info
+     */
+    public $channel_info;
 
-    function __construct()
+    /**
+     * @var parser
+     */
+    public $xmltv;
+
+    /**
+     * @var array Configuration parameters
+     */
+    public $config;
+
+    public function __construct()
     {
+        $this->config = require 'config.php';
         $loader = new Twig\Loader\FilesystemLoader(array(__DIR__.'/../templates'), __DIR__);
         $this->twig = new Twig\Environment($loader, array('debug' => true, 'strict_variables' => true));
+        $this->twig->addExtension(new Twig\Extension\DebugExtension());
+        $this->channel_info = new common\channel_info();
     }
 
     /**

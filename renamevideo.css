@@ -9,3 +9,14 @@ p {
 .warning {
 	background-color: #FF0;
 }
+.description {
+	max-width: 50%;
+}
+
+.snapshots {
+	width: calc(calc(187px*3) + 10px);
+}
+
+h3 {
+	margin-top: 0;
+}

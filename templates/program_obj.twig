@@ -1,0 +1,12 @@
+{% if program.error is defined  %}
+    Error from XMLTV: {{ program.error.getMessage }}<br />
+{% elseif program.header is not defined %}
+    {{ dump(program) }}
+{% else %}
+    <strong>{{ program.header }}</strong><br/>
+    {{ program.sub_title }}
+    {% if program.description is defined %}
+        <p>{{ program.description }}</p>
+    {% endif %}
+    <br/>
+{% endif %}
